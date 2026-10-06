@@ -1,11 +1,10 @@
-
 # AI Translation Quality Benchmark
 
-On 60 English→Russian segments, an LLM judge agreed with my pass/fail verdicts 90% of the time but caught only 3 of the 21 segments I failed.
+On 60 English→Russian segments, an LLM judge agreed with my pass/fail verdicts 90% of the time and caught two errors I missed. Most of our disagreements were about severity, which a style guide should narrow.
 
 ## The question
 
-Can general-purpose LLMs match a dedicated MT engine on English→Russian? And can an LLM judge stand in for a human quality reviewer?
+Can an LLM judge stand in for a human quality reviewer on English→Russian MT?
 
 ## Setup
 
@@ -15,8 +14,8 @@ Can general-purpose LLMs match a dedicated MT engine on English→Russian? And c
   - Claude Sonnet 5.5, desktop app, incognito chat
   - ChatGPT GPT-5.6, web app, incognito chat
   - DeepL free web translator, default settings
-- **Controls:** same prompt for both LLMs, segment IDs kept, raw outputs frozen, scored in shuffled order.
-- **Scoring:** I scored all 180 outputs myself, with 15+ years in localization quality. I used an MQM-style typology with five categories: Accuracy, Fluency, Style, Terminology, and Locale convention. Severity weights are minor 1, major 5, critical 25. A segment fails if it has any major or critical error.
+- **Controls:** same prompt for both LLMs, segment IDs kept, raw outputs frozen, shuffled scoring order.
+- **Scoring:** I scored all 180 outputs myself, with 15+ years in localization quality. MQM-style typology: Accuracy, Fluency, Style, Terminology, Locale convention. Weights: minor 1, major 5, critical 25. Any major or critical error fails the segment.
 
 ## Results
 
@@ -26,36 +25,42 @@ Can general-purpose LLMs match a dedicated MT engine on English→Russian? And c
 | Claude (Sonnet 5.5) | 1.82 | 1 | 5 | 19 |
 | DeepL (free web) | 1.82 | 0 | 7 | 18 |
 
-The three systems scored close together. Weighted by severity, the penalty per 100 words was DeepL 3.87, ChatGPT 3.94, and Claude 5.04. Claude's higher score comes from one critical error: a sentence cut off mid-clause.
+The three systems scored close together. Severity-weighted penalty per 100 words: DeepL 3.87, ChatGPT 3.94, Claude 5.04 (driven by one truncated sentence).
 
-## Where the LLM judge was wrong
+## Where the judge and I disagreed
 
 The judge was Claude Sonnet 5.5, run October 3, 2026, using the prompt in `judge_prompt.md`.
 
-- **Verdict agreement:** 90%, with a penalty correlation of 0.61. Inflated, since most segments pass.
+- **Verdict agreement:** 90% (penalty correlation 0.61).
 - **Recall on failures:** 3 of 21 (14%).
 - **Severity:** the judge flagged 26 errors and none were critical. I flagged 72, including 1 critical and 20 major. The judge caught the truncated sentence but rated it major.
-- **What it missed:** a plural where the source is singular ("женщины" for "the woman"), tense agreement, "animal pests" rendered as "вредные животные", a company name that was translated instead of kept, and miles and feet left unconverted.
+- **What it missed:** number agreement ("женщины" for "the woman"), tense, a mistranslated term ("animal pests"), a translated company name.
 - **Preference flags:** 4, all minor.
 - **What it caught that I missed:** 2 errors: a dropped "so far" and Jimmy Wales's surname rendered as "Уэльс".
-- **Pattern:** the judge doesn't produce false alarms. It under-flags errors and under-rates their severity, especially meaning shifts and locale conventions.
+- **Pattern:** the judge never failed a segment I passed, but it was sometimes strict on wording. Of the 26 segments where our scores differed, 11 came down to severity, mainly over unit conversion. The judge also missed 9 meaning errors outright.
 
 ## What this means in practice
 
-An LLM judge works as a second reviewer that adds findings. It never failed a segment I passed. It doesn't work as a gate: at 14% recall, a PASS from the judge tells you little. A human should own severity calls and the Accuracy and Locale convention categories, which is where the judge missed the most.
+An LLM reviewer is useful today as a second pair of eyes. It flags real issues, including ones a human misses, and when it fails a segment it is right.
+
+Most of the gap is a guidelines problem. Neither the systems nor the judge had a style guide or a locale brief. Without guidelines, any reviewer, human or AI, is guessing at severity. My next step is to give the judge a style guide and measure how much of the severity gap closes.
+
+One thing guidelines won't fix is the meaning errors the judge missed, such as number agreement and tense. Until its recall improves, a human should still review Accuracy, and a PASS from the judge shouldn't be enough to ship.
 
 ## Limitations
 
 - One scorer, so there's no inter-annotator agreement.
 - 60 segments and one language pair.
+- No style guide or locale brief for the systems or the judge, so severity on context-dependent issues (units, register) is a judgment call.
 - The judge is the same model as one of the systems it scored.
 - FLORES+ is public, so some systems may have seen it in training.
-- These results come from consumer chat interfaces as of the run dates. The models behind them can change without notice.
+- Consumer chat interfaces; results hold as of the run dates.
 
 ## Files in this repo
 
 - `judge_prompt.md`: the judge prompt
-- `raw_outputs.csv`: source segments and the outputs from all three systems
+- `raw_outputs.csv`: sources and all three systems' outputs
 - `scoring.csv`: my segment-level scores
 - `judge_scores.csv` and `judge_errors.csv`: the judge's verdicts and the errors it flagged
+- `compare.csv`: my scores and the judge's side by side, with a cause for each gap
 - `compare.csv`: my scores and the judge's side by side, with a cause for each gap
