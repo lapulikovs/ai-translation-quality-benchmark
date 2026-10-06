@@ -1,6 +1,5 @@
 
 # AI Translation Quality Benchmark
-LLM vs. MT translation quality, scored with an MQM-style typology, plus an audit of an LLM judge.
 
 On 60 English→Russian segments, an LLM judge agreed with my pass/fail verdicts 90% of the time but caught only 3 of the 21 segments I failed.
 
